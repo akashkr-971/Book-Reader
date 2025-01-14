@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 
-final List<List<String>> books = [];
-final List<List<String>> filteredBooks = [];
+List<List<String>> books = [];
+List<List<String>> allbooks = [];
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -21,13 +21,33 @@ class _HomeState extends State<Home> {
   final TextEditingController _searchController = TextEditingController();
 
   void _toggleSearch() {
+    allbooks = books;
     setState(() {
       _isSearching = !_isSearching;
       if (!_isSearching) {
-        _searchController
-            .clear(); // Clear the text field when the search is closed
+        _searchController.clear();
       }
     });
+  }
+
+  void _filterBooks() {
+    String query = _searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        print('\n');
+        print('Query is empty');
+        books = allbooks;
+      } else {
+        books = books.where((book) {
+          return book[0].toLowerCase().contains(query); // Filter by book name
+        }).toList();
+      }
+    });
+    print('\n');
+    print("The filtered books are: $books");
+    print('\n');
+    print("The all books are: $allbooks");
+    _reload();
   }
 
   void _reload() {
@@ -49,12 +69,36 @@ class _HomeState extends State<Home> {
     if (result != null) {
       File file = File(result.files.single.path!);
       String fileName = p.basenameWithoutExtension(result.files.single.name);
-      setState(() {
-        books.add([fileName, file.path]);
-      });
+      bool fileExists = books.any((book) => book[0] == fileName);
+      if (!fileExists) {
+        setState(() {
+          books.add([fileName, file.path]);
+        });
+      } else {
+        if (mounted) {
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Already Uploaded'),
+                content: const Text('Book already exists'),
+                actions: <Widget>[
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Close the dialog
+                    },
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+        print('Book already exists');
+      }
       _reload();
     } else {
-      print('No file selected');
+      print('File not selected');
     }
   }
 
@@ -71,6 +115,7 @@ class _HomeState extends State<Home> {
         title: _isSearching
             ? TextField(
                 controller: _searchController,
+                onChanged: (query) => _filterBooks(),
                 decoration: const InputDecoration(
                   hintText: 'Search...',
                   hintStyle: TextStyle(color: Colors.white),
@@ -120,9 +165,9 @@ class Homescreen extends StatefulWidget {
 class _HomescreenState extends State<Homescreen> {
   @override
   Widget build(BuildContext context) {
-    void openPdf() {
+    void openPdf(int index) {
       print('Opening PDF...');
-      print(books);
+      print(index);
     }
 
     return ListView.builder(
@@ -139,17 +184,22 @@ class _HomescreenState extends State<Homescreen> {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                          title: const Text('Book Opertaions'),
+                          title: const Text('Book Operations'), // Fixed typo
                           content: ConstrainedBox(
                             constraints: BoxConstraints(maxHeight: 150),
                             child: Column(
                               children: [
                                 TextButton(
                                   onPressed: () {
-                                    Navigator.pop(context);
                                     setState(() {
-                                      books.removeAt(index);
+                                      String bookname = books[index][0];
+                                      books.removeWhere(
+                                          (book) => book[0] == bookname);
+                                      allbooks.removeWhere(
+                                          (book) => book[0] == bookname);
                                     });
+                                    Navigator.pop(context);
+                                    print(books);
                                   },
                                   child: const Text('Delete Book'),
                                 ),
@@ -174,7 +224,6 @@ class _HomescreenState extends State<Homescreen> {
                                                 TextButton(
                                                   onPressed: () {
                                                     Navigator.pop(context);
-                                                    setState(() {});
                                                   },
                                                   child: Text('Rename Book'),
                                                 ),
@@ -197,7 +246,7 @@ class _HomescreenState extends State<Homescreen> {
                     });
               },
               icon: const Icon(Icons.more_vert)),
-          onTap: openPdf,
+          onTap: () => openPdf(index),
         );
       },
     );
