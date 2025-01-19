@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, use_build_context_synchronously
 
 import 'dart:io';
 
@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'bookdisplay.dart';
 import 'package:path/path.dart' as p;
+import 'db_helper.dart';
 
 List<List<String>> books = [];
 List<List<String>> allbooks = [];
@@ -20,6 +21,33 @@ class _HomeState extends State<Home> {
   int _currentIndex = 0;
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBooks();
+  }
+
+  Future<void> _loadBooks() async {
+    List<Map<String, dynamic>> dbBooks = await DBHelper.getBooks();
+    setState(() {
+      print("state Called");
+      books = dbBooks
+          .map((book) => [book['name'] as String, book['path'] as String])
+          .toList();
+    });
+    print('The books stored in db are : $books');
+    _reload();
+  }
+
+  Future<void> _addBook(bookName, path) async {
+    await DBHelper.insertBook({
+      'name': bookName,
+      'path': path,
+      'currentPage': 1,
+    });
+    _loadBooks();
+  }
 
   void _toggleSearch() {
     setState(() {
@@ -73,6 +101,7 @@ class _HomeState extends State<Home> {
         setState(() {
           books.add([fileName, file.path]);
           allbooks.add([fileName, file.path]);
+          _addBook(fileName, file.path);
         });
       } else {
         if (mounted) {
@@ -106,6 +135,17 @@ class _HomeState extends State<Home> {
     setState(() {
       _currentIndex = index;
     });
+    if (index == 2) {
+      _currentIndex = 0;
+      for (var book in books) {
+        print(book[0]);
+      }
+      print("all books");
+      for (var book in allbooks) {
+        print(book[0]);
+      }
+      print(allbooks[0]);
+    }
   }
 
   @override
@@ -150,6 +190,10 @@ class _HomeState extends State<Home> {
               icon: Icon(Icons.settings),
               label: 'Settings',
             ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.book_sharp),
+              label: "allbooks",
+            )
           ]),
     );
   }
@@ -194,71 +238,79 @@ class _HomescreenState extends State<Homescreen> {
                             child: Column(
                               children: [
                                 TextButton(
-                                  onPressed: () {
+                                  onPressed: () async {
+                                    String bookname = books[index][0];
+                                    await DBHelper.deleteBook(bookname);
                                     setState(() {
-                                      String bookname = books[index][0];
-                                      books.removeWhere(
-                                          (book) => book[0] == bookname);
+                                      books.removeAt(index);
                                       allbooks.removeWhere(
                                           (book) => book[0] == bookname);
                                     });
                                     Navigator.pop(context);
-                                    books = allbooks;
-                                    print(books);
+                                    print('Deleted book: $bookname');
+                                    setState(() {});
                                   },
                                   child: const Text('Delete Book'),
                                 ),
                                 TextButton(
-                                    onPressed: () {
-                                      Navigator.pop(context);
-                                      TextEditingController renameController =
-                                          TextEditingController();
-                                      renameController.text = books[index][0];
-                                      print(
-                                          'old book name in controller is: ${renameController.text}');
-                                      showDialog(
-                                          context: context,
-                                          builder: (BuildContext context) {
-                                            return AlertDialog(
-                                              title: const Text('Rename Book'),
-                                              content: TextField(
-                                                controller: renameController,
-                                                decoration:
-                                                    const InputDecoration(
-                                                        hintText:
-                                                            'Enter new name'),
-                                              ),
-                                              actions: <Widget>[
-                                                TextButton(
-                                                  onPressed: () {
-                                                    String value =
-                                                        renameController.text;
-                                                    String oldBookName =
-                                                        books[index][0];
-                                                    print(
-                                                        'Old book name: $oldBookName');
-                                                    books[index][0] = value;
-                                                    int allBooksIndex = allbooks
-                                                        .indexWhere((book) =>
-                                                            book[0] ==
-                                                            oldBookName);
-                                                    print(oldBookName);
-                                                    print(allBooksIndex);
-                                                    if (allBooksIndex != -1) {
-                                                      allbooks[allBooksIndex]
-                                                          [0] = value;
-                                                    }
-                                                    books = allbooks;
-                                                    Navigator.pop(context);
-                                                    setState(() {});
-                                                  },
-                                                  child: Text('Rename Book'),
-                                                ),
-                                              ],
-                                            );
-                                          });
-                                    },
-                                    child: const Text('Rename Book')),
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close the dialog
+                                    TextEditingController renameController =
+                                        TextEditingController();
+                                    renameController.text = books[index][0];
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: const Text('Rename Book'),
+                                          content: TextField(
+                                            controller: renameController,
+                                            decoration: const InputDecoration(
+                                                hintText: 'Enter new name'),
+                                          ),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              onPressed: () async {
+                                                String newBookName =
+                                                    renameController.text;
+                                                String oldBookName =
+                                                    books[index][0];
+                                                final db =
+                                                    await DBHelper.database;
+                                                await db.update(
+                                                  'books',
+                                                  {'name': newBookName},
+                                                  where: 'name = ?',
+                                                  whereArgs: [oldBookName],
+                                                );
+
+                                                setState(() {
+                                                  books[index][0] =
+                                                      newBookName; // Update the name in books list
+                                                  int allBooksIndex = allbooks
+                                                      .indexWhere((book) =>
+                                                          book[0] ==
+                                                          oldBookName);
+                                                  if (allBooksIndex != -1) {
+                                                    allbooks[allBooksIndex][0] =
+                                                        newBookName; // Update in allbooks
+                                                  }
+                                                });
+
+                                                Navigator.pop(context);
+                                                setState(() {});
+                                                print(
+                                                    'Renamed book from $oldBookName to $newBookName');
+                                              },
+                                              child: const Text('Rename Book'),
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                  child: const Text('Rename Book'),
+                                ),
                                 TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);

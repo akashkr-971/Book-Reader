@@ -27,6 +27,7 @@ class _BookDisplayState extends State<BookDisplay> {
   final FlutterTts _flutterTts = FlutterTts();
   final TextEditingController _pageController = TextEditingController();
   PDFViewController? _pdfViewController;
+  List<Map> _voices = [];
 
   @override
   void initState() {
@@ -37,14 +38,31 @@ class _BookDisplayState extends State<BookDisplay> {
   }
 
   Future<void> _initializeTts() async {
+    List<Map> voices = [];
+    await _flutterTts.getVoices.then((data) {
+      try {
+        voices = List<Map>.from(data);
+        voices = voices.where((voice) => voice["name"].contains("en")).toList();
+        print("The voices are : $voices");
+      } catch (e) {
+        print("the error is : $e");
+      }
+    });
+    setState(() {
+      _voices = voices;
+      if (_voices.isNotEmpty) {}
+    });
+
     await _flutterTts.setLanguage("en-US");
     await _flutterTts.setPitch(1.0);
+    await _flutterTts.setVoice(
+        {"name": voices.first.toString(), "locale": voices.first.toString()});
     await _flutterTts.setSpeechRate(_speechRate);
 
     _flutterTts.setCompletionHandler(() {
-      if (mounted) {
+      if (_currentPage < _totalPages - 1) {
         setState(() {
-          isPlaying = false;
+          goToNextPage();
         });
       }
     });
@@ -106,15 +124,7 @@ class _BookDisplayState extends State<BookDisplay> {
 
   Future<void> _startTTS() async {
     try {
-      if (_currentPageText.isEmpty) {
-        await _loadPageText(_currentPage);
-      }
-      if (_currentPageText.startsWith('Error') ||
-          _currentPageText.startsWith('No text found')) {
-        await _flutterTts.speak("Cannot read this page. $_currentPageText");
-      } else {
-        await _flutterTts.speak(_currentPageText);
-      }
+      await _flutterTts.speak(_currentPageText);
     } catch (e) {
       print('TTS Error: $e');
       setState(() {
@@ -142,6 +152,61 @@ class _BookDisplayState extends State<BookDisplay> {
     _pageController.dispose();
     _pdfDocument.dispose();
     super.dispose();
+  }
+
+  void _showVoiceSelection() {
+    print("Function called");
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Select Voice"),
+          content: _voices.isEmpty
+              ? const CircularProgressIndicator()
+              : SingleChildScrollView(
+                  child: Column(
+                    children: _voices.map((voice) {
+                      return ListTile(
+                        title: Text(voice["name"]),
+                        onTap: () async {
+                          print("The selected voice is ${voice["name"]}");
+
+                          setState(() {});
+
+                          await _flutterTts.setVoice({
+                            "name": voice["name"],
+                            "locale": voice["locale"],
+                          });
+                          if (isPlaying) {
+                            _flutterTts.pause();
+                            await _startTTS();
+                          }
+                          Navigator.pop(context);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Close"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> goToNextPage() async {
+    if (_currentPage < _totalPages - 1) {
+      setState(() {
+        _currentPage++;
+      });
+      await _pdfViewController?.setPage(_currentPage);
+      await _loadPageText(_currentPage);
+      _startTTS();
+    }
   }
 
   @override
@@ -183,6 +248,12 @@ class _BookDisplayState extends State<BookDisplay> {
                                 (_currentPage + 1).toString();
                           });
                           await _loadPageText(_currentPage);
+                          if (isPlaying) {
+                            await _flutterTts.pause();
+                            Future.delayed(Duration(seconds: 1), () async {
+                              await _startTTS();
+                            });
+                          }
                         }
                       },
                       onError: (error) {
@@ -285,6 +356,8 @@ class _BookDisplayState extends State<BookDisplay> {
             } else {
               await _flutterTts.pause();
             }
+          } else if (index == 2) {
+            _showVoiceSelection();
           }
         },
       ),
