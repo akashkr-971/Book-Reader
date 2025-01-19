@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'bookdisplay.dart';
 import 'package:path/path.dart' as p;
 
 List<List<String>> books = [];
@@ -22,14 +21,13 @@ class _HomeState extends State<Home> {
   final TextEditingController _searchController = TextEditingController();
 
   void _toggleSearch() {
+    allbooks = books;
     setState(() {
       _isSearching = !_isSearching;
       if (!_isSearching) {
         _searchController.clear();
-        books = List.from(allbooks);
       }
     });
-    _reload();
   }
 
   void _filterBooks() {
@@ -41,10 +39,14 @@ class _HomeState extends State<Home> {
         books = allbooks;
       } else {
         books = books.where((book) {
-          return book[0].toLowerCase().contains(query);
+          return book[0].toLowerCase().contains(query); // Filter by book name
         }).toList();
       }
     });
+    print('\n');
+    print("The filtered books are: $books");
+    print('\n');
+    print("The all books are: $allbooks");
     _reload();
   }
 
@@ -68,11 +70,9 @@ class _HomeState extends State<Home> {
       File file = File(result.files.single.path!);
       String fileName = p.basenameWithoutExtension(result.files.single.name);
       bool fileExists = books.any((book) => book[0] == fileName);
-      bool filepathExists = books.any((book) => book[0] == file.path);
-      if (!fileExists && !filepathExists) {
+      if (!fileExists) {
         setState(() {
           books.add([fileName, file.path]);
-          allbooks.add([fileName, file.path]);
         });
       } else {
         if (mounted) {
@@ -163,17 +163,13 @@ class Homescreen extends StatefulWidget {
 }
 
 class _HomescreenState extends State<Homescreen> {
-  void _openPDF(int index) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => BookDisplay(book: books[index]),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    void openPdf(int index) {
+      print('Opening PDF...');
+      print(index);
+    }
+
     return ListView.builder(
       itemCount: books.length,
       itemBuilder: (context, index) {
@@ -188,7 +184,7 @@ class _HomescreenState extends State<Homescreen> {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                          title: const Text('Book Operations'),
+                          title: const Text('Book Operations'), // Fixed typo
                           content: ConstrainedBox(
                             constraints: BoxConstraints(maxHeight: 150),
                             child: Column(
@@ -203,7 +199,6 @@ class _HomescreenState extends State<Homescreen> {
                                           (book) => book[0] == bookname);
                                     });
                                     Navigator.pop(context);
-                                    books = allbooks;
                                     print(books);
                                   },
                                   child: const Text('Delete Book'),
@@ -211,46 +206,24 @@ class _HomescreenState extends State<Homescreen> {
                                 TextButton(
                                     onPressed: () {
                                       Navigator.pop(context);
-                                      TextEditingController renameController =
-                                          TextEditingController();
-                                      renameController.text = books[index][0];
-                                      print(
-                                          'old book name in controller is: ${renameController.text}');
                                       showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
                                             return AlertDialog(
                                               title: const Text('Rename Book'),
                                               content: TextField(
-                                                controller: renameController,
                                                 decoration:
                                                     const InputDecoration(
                                                         hintText:
                                                             'Enter new name'),
+                                                onChanged: (value) {
+                                                  books[index][0] = value;
+                                                },
                                               ),
                                               actions: <Widget>[
                                                 TextButton(
                                                   onPressed: () {
-                                                    String value =
-                                                        renameController.text;
-                                                    String oldBookName =
-                                                        books[index][0];
-                                                    print(
-                                                        'Old book name: $oldBookName');
-                                                    books[index][0] = value;
-                                                    int allBooksIndex = allbooks
-                                                        .indexWhere((book) =>
-                                                            book[0] ==
-                                                            oldBookName);
-                                                    print(oldBookName);
-                                                    print(allBooksIndex);
-                                                    if (allBooksIndex != -1) {
-                                                      allbooks[allBooksIndex]
-                                                          [0] = value;
-                                                    }
-                                                    books = allbooks;
                                                     Navigator.pop(context);
-                                                    setState(() {});
                                                   },
                                                   child: Text('Rename Book'),
                                                 ),
@@ -273,7 +246,7 @@ class _HomescreenState extends State<Homescreen> {
                     });
               },
               icon: const Icon(Icons.more_vert)),
-          onTap: () => _openPDF(index),
+          onTap: () => openPdf(index),
         );
       },
     );
