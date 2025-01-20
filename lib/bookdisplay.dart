@@ -1,4 +1,4 @@
-// ignore_for_file: deprecated_member_use, avoid_print
+// ignore_for_file: deprecated_member_use, avoid_print, use_build_context_synchronously
 
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -22,12 +22,13 @@ class _BookDisplayState extends State<BookDisplay> {
   String _errorMessage = '';
   late PdfDocument _pdfDocument;
   String _currentPageText = '';
-  double _speechRate = 1.0;
+  double _speechRate = 0.5;
 
   final FlutterTts _flutterTts = FlutterTts();
   final TextEditingController _pageController = TextEditingController();
   PDFViewController? _pdfViewController;
   List<Map> _voices = [];
+  String _currentWord = '';
 
   @override
   void initState() {
@@ -66,6 +67,50 @@ class _BookDisplayState extends State<BookDisplay> {
         });
       }
     });
+
+    _flutterTts.setStartHandler(() {
+      print("Speech started");
+    });
+
+    _flutterTts
+        .setProgressHandler((String text, int start, int end, String word) {
+      print('Currently speaking: $word');
+      _highlightWord(word);
+    });
+  }
+
+  void _highlightWord(String word) {
+    setState(() {
+      _currentWord = word;
+    });
+  }
+
+  Widget _buildHightlightedtext(String text) {
+    List<String> words = text.split(' ');
+    List<Widget> wordWidgets = [];
+
+    for (var word in words) {
+      bool isHighlighted = word == _currentWord;
+
+      wordWidgets.add(Text(
+        word,
+        style: TextStyle(
+          backgroundColor: isHighlighted ? Colors.yellow : Colors.transparent,
+          fontSize: 20,
+          color: Colors.black,
+        ),
+        textAlign: TextAlign.center,
+      ));
+
+      wordWidgets.add(const SizedBox(width: 5));
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: wordWidgets,
+      ),
+    );
   }
 
   Future<void> _initializePdf() async {
@@ -103,7 +148,6 @@ class _BookDisplayState extends State<BookDisplay> {
       if (pageNumber < 0 || pageNumber >= _pdfDocument.pages.count) {
         throw Exception('Invalid page number');
       }
-
       PdfTextExtractor extractor = PdfTextExtractor(_pdfDocument);
       String text = extractor.extractText(
         startPageIndex: pageNumber,
@@ -264,57 +308,61 @@ class _BookDisplayState extends State<BookDisplay> {
                       },
                     ),
                     Positioned(
-                      bottom: 16.0,
-                      right: 16.0,
-                      child: Container(
-                        padding: const EdgeInsets.all(8.0),
-                        decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.6),
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Text(
-                              "Page: ",
-                              style: TextStyle(color: Colors.white),
-                            ),
-                            Container(
-                              width: 40.0,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4.0),
-                              child: TextField(
-                                controller: _pageController,
-                                keyboardType: TextInputType.number,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(color: Colors.white),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                ),
-                                onChanged: (value) async {
-                                  int? pageNumber = int.tryParse(value);
-                                  if (pageNumber != null &&
-                                      pageNumber > 0 &&
-                                      pageNumber <= _totalPages) {
-                                    setState(() {
-                                      _currentPage = pageNumber - 1;
-                                    });
-                                    await _pdfViewController
-                                        ?.setPage(_currentPage);
-                                    await _loadPageText(_currentPage);
-                                  }
-                                },
+                        bottom: 16.0,
+                        right: 16.0,
+                        child: Container(
+                          padding: const EdgeInsets.all(8.0),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.6),
+                            borderRadius: BorderRadius.circular(8.0),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                "Page: ",
+                                style: TextStyle(color: Colors.white),
                               ),
-                            ),
-                            Text(
-                              ' / $_totalPages',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                              Container(
+                                width: 40.0,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4.0),
+                                child: TextField(
+                                  controller: _pageController,
+                                  keyboardType: TextInputType.number,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    isDense: true,
+                                  ),
+                                  onChanged: (value) async {
+                                    int? pageNumber = int.tryParse(value);
+                                    if (pageNumber != null &&
+                                        pageNumber > 0 &&
+                                        pageNumber <= _totalPages) {
+                                      setState(() {
+                                        _currentPage = pageNumber - 1;
+                                      });
+                                      await _pdfViewController
+                                          ?.setPage(_currentPage);
+                                      await _loadPageText(_currentPage);
+                                    }
+                                  },
+                                ),
+                              ),
+                              Text(
+                                ' / $_totalPages',
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        )),
+                    // Positioned(
+                    //     top: 100,
+                    //     left: 20,
+                    //     right: 20,
+                    //     child: _buildHightlightedtext(_currentPageText))
                   ],
                 ),
       bottomNavigationBar: BottomNavigationBar(

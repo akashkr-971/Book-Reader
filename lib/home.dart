@@ -10,6 +10,8 @@ import 'db_helper.dart';
 
 List<List<String>> books = [];
 List<List<String>> allbooks = [];
+bool _isSearching = false;
+final TextEditingController _searchController = TextEditingController();
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -19,13 +21,20 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   int _currentIndex = 0;
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _loadBooks();
+  }
+
+  void _reload() {
+    setState(() {
+      _currentIndex = 0;
+      _pages[0] = Homescreen();
+      _pages[1] = Settingspage();
+    });
+    print('reload called');
   }
 
   Future<void> _loadBooks() async {
@@ -37,6 +46,7 @@ class _HomeState extends State<Home> {
           .toList();
     });
     print('The books stored in db are : $books');
+    allbooks = books;
     _reload();
   }
 
@@ -50,11 +60,12 @@ class _HomeState extends State<Home> {
   }
 
   void _toggleSearch() {
+    allbooks = books;
     setState(() {
       _isSearching = !_isSearching;
       if (!_isSearching) {
         _searchController.clear();
-        books = List.from(allbooks);
+        books = allbooks;
       }
     });
     _reload();
@@ -74,14 +85,6 @@ class _HomeState extends State<Home> {
       }
     });
     _reload();
-  }
-
-  void _reload() {
-    setState(() {
-      _currentIndex = 0;
-      _pages[0] = Homescreen();
-      _pages[1] = Settingspage();
-    });
   }
 
   final List<Widget> _pages = [
@@ -135,17 +138,6 @@ class _HomeState extends State<Home> {
     setState(() {
       _currentIndex = index;
     });
-    if (index == 2) {
-      _currentIndex = 0;
-      for (var book in books) {
-        print(book[0]);
-      }
-      print("all books");
-      for (var book in allbooks) {
-        print(book[0]);
-      }
-      print(allbooks[0]);
-    }
   }
 
   @override
@@ -190,10 +182,6 @@ class _HomeState extends State<Home> {
               icon: Icon(Icons.settings),
               label: 'Settings',
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.book_sharp),
-              label: "allbooks",
-            )
           ]),
     );
   }
@@ -218,6 +206,15 @@ class _HomescreenState extends State<Homescreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (books.isEmpty) {
+      return Center(
+        child: Text(
+          'No books available\nUpload a book to continue!!',
+          style: TextStyle(fontSize: 18, color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
     return ListView.builder(
       itemCount: books.length,
       itemBuilder: (context, index) {
@@ -245,6 +242,9 @@ class _HomescreenState extends State<Homescreen> {
                                       books.removeAt(index);
                                       allbooks.removeWhere(
                                           (book) => book[0] == bookname);
+                                      _searchController.clear();
+                                      _isSearching = !_isSearching;
+                                      books = allbooks;
                                     });
                                     Navigator.pop(context);
                                     print('Deleted book: $bookname');
@@ -293,8 +293,10 @@ class _HomescreenState extends State<Homescreen> {
                                                           oldBookName);
                                                   if (allBooksIndex != -1) {
                                                     allbooks[allBooksIndex][0] =
-                                                        newBookName; // Update in allbooks
+                                                        newBookName;
                                                   }
+                                                  _searchController.clear();
+                                                  books = allbooks;
                                                 });
 
                                                 Navigator.pop(context);
