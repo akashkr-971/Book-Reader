@@ -7,6 +7,7 @@ import 'package:file_picker/file_picker.dart';
 import 'bookdisplay.dart';
 import 'package:path/path.dart' as p;
 import 'db_helper.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 List<List<String>> books = [];
 List<List<String>> allbooks = [];
@@ -32,7 +33,8 @@ class _HomeState extends State<Home> {
     setState(() {
       _currentIndex = 0;
       _pages[0] = Homescreen();
-      _pages[1] = Settingspage();
+      _pages[1] = SearchBook();
+      _pages[2] = Settingspage();
     });
     print('reload called');
   }
@@ -40,7 +42,6 @@ class _HomeState extends State<Home> {
   Future<void> _loadBooks() async {
     List<Map<String, dynamic>> dbBooks = await DBHelper.getBooks();
     setState(() {
-      print("state Called");
       books = dbBooks
           .map((book) => [book['name'] as String, book['path'] as String])
           .toList();
@@ -87,11 +88,6 @@ class _HomeState extends State<Home> {
     _reload();
   }
 
-  final List<Widget> _pages = [
-    const Homescreen(),
-    const Settingspage(),
-  ];
-
   Future<void> _upload() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
 
@@ -133,6 +129,12 @@ class _HomeState extends State<Home> {
       print('File not selected');
     }
   }
+
+  final List<Widget> _pages = [
+    const Homescreen(),
+    const SearchBook(),
+    const Settingspage()
+  ];
 
   void onTabTapped(int index) {
     setState(() {
@@ -178,6 +180,8 @@ class _HomeState extends State<Home> {
               icon: Icon(Icons.home),
               label: 'Home',
             ),
+            BottomNavigationBarItem(
+                icon: Icon(Icons.search), label: 'Search Book'),
             BottomNavigationBarItem(
               icon: Icon(Icons.settings),
               label: 'Settings',
@@ -347,5 +351,76 @@ class _SettingspageState extends State<Settingspage> {
     return const Center(
       child: Text('Settings'),
     );
+  }
+}
+
+class SearchBook extends StatefulWidget {
+  const SearchBook({super.key});
+
+  @override
+  State<SearchBook> createState() => _SearchBookState();
+}
+
+Future<void> _searchbook(String bookName) async {
+  final Uri url =
+      Uri.parse('https://www.google.com/search?query=$bookName:pdf');
+
+  try {
+    await launchUrl(url);
+  } catch (e) {
+    print('The error is : $e');
+  }
+  // if (await canLaunchUrl(url)) {
+  //   await launchUrl(url);
+  // } else {
+  //   throw 'Could not launch $url';
+  // }
+}
+
+class _SearchBookState extends State<SearchBook> {
+  TextEditingController googlesearch = TextEditingController();
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        body: Padding(
+      padding: EdgeInsets.all(5),
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.all(15),
+            child: Text(
+              "Enter the Book name to search for pdf on google...",
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: googlesearch,
+                  decoration: InputDecoration(
+                      hintText: 'Enter book name',
+                      prefixIcon: Icon(Icons.search)),
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  String bookName = googlesearch.text;
+                  bookName = bookName.replaceAll(' ', '+');
+                  _searchbook(bookName);
+                },
+                style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(
+                        const Color.fromARGB(255, 97, 174, 236)),
+                    foregroundColor: WidgetStateProperty.all(
+                        const Color.fromARGB(255, 255, 255, 255))),
+                child: const Text('Search Book'),
+              )
+            ],
+          )
+        ],
+      ),
+    ));
   }
 }

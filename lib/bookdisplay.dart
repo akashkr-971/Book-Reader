@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class BookDisplay extends StatefulWidget {
   final List<String> book;
@@ -28,7 +30,6 @@ class _BookDisplayState extends State<BookDisplay> {
   final TextEditingController _pageController = TextEditingController();
   PDFViewController? _pdfViewController;
   List<Map> _voices = [];
-  String _currentWord = '';
 
   @override
   void initState() {
@@ -44,7 +45,6 @@ class _BookDisplayState extends State<BookDisplay> {
       try {
         voices = List<Map>.from(data);
         voices = voices.where((voice) => voice["name"].contains("en")).toList();
-        print("The voices are : $voices");
       } catch (e) {
         print("the error is : $e");
       }
@@ -67,50 +67,6 @@ class _BookDisplayState extends State<BookDisplay> {
         });
       }
     });
-
-    _flutterTts.setStartHandler(() {
-      print("Speech started");
-    });
-
-    _flutterTts
-        .setProgressHandler((String text, int start, int end, String word) {
-      print('Currently speaking: $word');
-      _highlightWord(word);
-    });
-  }
-
-  void _highlightWord(String word) {
-    setState(() {
-      _currentWord = word;
-    });
-  }
-
-  Widget _buildHightlightedtext(String text) {
-    List<String> words = text.split(' ');
-    List<Widget> wordWidgets = [];
-
-    for (var word in words) {
-      bool isHighlighted = word == _currentWord;
-
-      wordWidgets.add(Text(
-        word,
-        style: TextStyle(
-          backgroundColor: isHighlighted ? Colors.yellow : Colors.transparent,
-          fontSize: 20,
-          color: Colors.black,
-        ),
-        textAlign: TextAlign.center,
-      ));
-
-      wordWidgets.add(const SizedBox(width: 5));
-    }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: wordWidgets,
-      ),
-    );
   }
 
   Future<void> _initializePdf() async {
@@ -242,6 +198,92 @@ class _BookDisplayState extends State<BookDisplay> {
     );
   }
 
+  void _showdict() {
+    TextEditingController dictsearchcontroller = TextEditingController();
+    showDialog(
+        context: context,
+        builder: (context) {
+          if (isPlaying) {
+            _flutterTts.pause();
+          }
+          return AlertDialog(
+            title: const Text('Search the word!!'),
+            content: TextField(
+              controller: dictsearchcontroller,
+              decoration:
+                  const InputDecoration(hintText: 'Enter word to search'),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () async {
+                  String word = dictsearchcontroller.text.trim();
+                  if (word.isNotEmpty) {
+                    await _searchword(word);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a word')));
+                  }
+                },
+                child: const Text('Search Word'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (isPlaying) {
+                    _startTTS();
+                  }
+                },
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all(
+                        const Color.fromARGB(255, 76, 165, 238)),
+                    foregroundColor: MaterialStateProperty.all(
+                        const Color.fromARGB(255, 255, 252, 252))),
+                child: const Text("cancel"),
+              ),
+            ],
+          );
+        });
+  }
+
+  Future<void> _searchword(String word) async {
+    final url =
+        Uri.parse('https://api.dictionaryapi.dev/api/v2/entries/en/$word');
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        String meaning = data[0]['meanings'][0]['definitions'][0]['definition'];
+        _showresultdialog(meaning, word);
+      } else {
+        _showresultdialog("No definitions found!!", word);
+      }
+    } catch (e) {
+      print("Error fetching from api : $e");
+    }
+  }
+
+  void _showresultdialog(String ans, String word) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: Text(
+              'The Meaning of word $word is',
+              textAlign: TextAlign.center,
+            ),
+            content: Text(ans),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: const Text('Close'),
+              )
+            ],
+          );
+        });
+  }
+
   Future<void> goToNextPage() async {
     if (_currentPage < _totalPages - 1) {
       setState(() {
@@ -358,15 +400,11 @@ class _BookDisplayState extends State<BookDisplay> {
                             ],
                           ),
                         )),
-                    // Positioned(
-                    //     top: 100,
-                    //     left: 20,
-                    //     right: 20,
-                    //     child: _buildHightlightedtext(_currentPageText))
                   ],
                 ),
       bottomNavigationBar: BottomNavigationBar(
         backgroundColor: const Color.fromARGB(255, 176, 202, 248),
+        type: BottomNavigationBarType.fixed,
         items: [
           BottomNavigationBarItem(
             icon: const Icon(Icons.speed),
@@ -383,6 +421,7 @@ class _BookDisplayState extends State<BookDisplay> {
             label: isPlaying ? 'Stop' : 'Start',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.voice_chat), label: 'Voice'),
+          BottomNavigationBarItem(icon: Icon(Icons.book_online), label: 'Dict')
         ],
         onTap: (index) async {
           if (index == 0) {
@@ -406,6 +445,8 @@ class _BookDisplayState extends State<BookDisplay> {
             }
           } else if (index == 2) {
             _showVoiceSelection();
+          } else if (index == 3) {
+            _showdict();
           }
         },
       ),
