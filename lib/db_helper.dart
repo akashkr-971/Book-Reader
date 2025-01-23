@@ -44,6 +44,13 @@ class DBHelper {
     return await db.query('books');
   }
 
+  static Future<List<Map<String, dynamic>>> searchBook(
+      String searchquery) async {
+    final db = await database;
+    return await db
+        .query('books', where: 'name LIKE ?', whereArgs: ['%$searchquery%']);
+  }
+
   static Future<void> updateBookPage(int id, int page) async {
     final db = await database;
     await db.update(

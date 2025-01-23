@@ -370,11 +370,6 @@ Future<void> _searchbook(String bookName) async {
   } catch (e) {
     print('The error is : $e');
   }
-  // if (await canLaunchUrl(url)) {
-  //   await launchUrl(url);
-  // } else {
-  //   throw 'Could not launch $url';
-  // }
 }
 
 class _SearchBookState extends State<SearchBook> {

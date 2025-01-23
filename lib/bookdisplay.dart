@@ -1,17 +1,18 @@
 // ignore_for_file: deprecated_member_use, avoid_print, use_build_context_synchronously
 
 import 'dart:io';
+import 'package:book_reader/home.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'db_helper.dart';
 
 class BookDisplay extends StatefulWidget {
   final List<String> book;
   const BookDisplay({super.key, required this.book});
-
   @override
   State<BookDisplay> createState() => _BookDisplayState();
 }
@@ -37,6 +38,7 @@ class _BookDisplayState extends State<BookDisplay> {
     _pageController.text = (_currentPage + 1).toString();
     _initializePdf();
     _initializeTts();
+    _loadOpenedBook();
   }
 
   Future<void> _initializeTts() async {
@@ -99,6 +101,16 @@ class _BookDisplayState extends State<BookDisplay> {
     }
   }
 
+  Future<void> _loadOpenedBook() async {
+    List openedbook = await DBHelper.searchBook(widget.book[0]);
+    _currentPage = (openedbook[0]['currentPage']) as int;
+    print('The page where we stopped is : $_currentPage');
+    Future.delayed(Duration(seconds: 1), () async {
+      _pdfViewController?.setPage(_currentPage);
+      await _loadPageText(_currentPage);
+    });
+  }
+
   Future<void> _loadPageText(int pageNumber) async {
     try {
       if (pageNumber < 0 || pageNumber >= _pdfDocument.pages.count) {
@@ -109,11 +121,12 @@ class _BookDisplayState extends State<BookDisplay> {
         startPageIndex: pageNumber,
         endPageIndex: pageNumber,
       );
-
       setState(() {
         _currentPageText =
             text.isNotEmpty ? text : 'No text found on this page.';
       });
+      List bookid = await DBHelper.searchBook(widget.book[0]);
+      await DBHelper.updateBookPage(bookid[0]['id'], pageNumber);
     } catch (e) {
       print('Error loading page text: $e');
       setState(() {
@@ -258,7 +271,7 @@ class _BookDisplayState extends State<BookDisplay> {
         _showresultdialog("No definitions found!!", word);
       }
     } catch (e) {
-      print("Error fetching from api : $e");
+      _showresultdialog("Error fetching from api ", e.toString());
     }
   }
 
@@ -289,6 +302,7 @@ class _BookDisplayState extends State<BookDisplay> {
       setState(() {
         _currentPage++;
       });
+      print(books);
       await _pdfViewController?.setPage(_currentPage);
       await _loadPageText(_currentPage);
       _startTTS();
