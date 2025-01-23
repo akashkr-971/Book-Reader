@@ -2,6 +2,7 @@
  
 A Flutter-based mobile application designed to enhance your reading experience by allowing you to upload a PDF, select it, and listen to its content using text-to-speech (TTS) functionality. The app also includes local data storage for user preferences and reading progress.
 
+<br>
 
 ## Features ✨
 
@@ -10,6 +11,8 @@ A Flutter-based mobile application designed to enhance your reading experience b
 - 💾 *Local Data Storage*: Store your data locally using SQLite for offline access.
 - 🔄 *Continue Where You Left Off*: Save and load reading progress.
 - 🛠 *User-Friendly Interface*: Minimalistic design for a seamless reading experience.
+
+<br>
 
 ## Dependencies 🧩
 
@@ -31,6 +34,8 @@ dependencies:
 
 ```
 
+<br>
+
 ## Installation 🚀
 
 1. Clone the Repository:
@@ -49,6 +54,7 @@ flutter pub get
 flutter run
 ```
 
+<br>
 
 ## Usage 📱 
 
@@ -63,27 +69,25 @@ flutter run
 
 4. Your progress is automatically saved locally for future sessions.
 
----
+<br>
 
 ## Future Enhancements 🌟
 
-Dark mode support.
+* Dark mode support.
 
-Multi-language TTS functionality.
+* Multi-language TTS functionality.
 
-Bookmarking specific pages or sections.
+* Bookmarking specific pages or sections.
 
-Cloud backup for user data.
+* Cloud backup for user data.
 
-
----
-
+<br>
+  
 ## Contributing 🤝
 
 Contributions are welcome! Feel free to fork this repository and submit pull requests.
 
-
----
+<br>
 
 ## Contact 📬
 
@@ -91,9 +95,9 @@ For any questions or suggestions, feel free to reach out:
 
 Email: akashkr971@gmail.com
 
-GitHub: akashkr-971
+GitHub: https://github.com/akashkr-971
 
----
+<br>
 
 ## Happy reading! 🎉
 
