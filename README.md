@@ -65,7 +65,7 @@ flutter run
 
 ---
 
-##Future Enhancements 🌟
+## Future Enhancements 🌟
 
 Dark mode support.
 
@@ -78,14 +78,14 @@ Cloud backup for user data.
 
 ---
 
-##Contributing 🤝
+## Contributing 🤝
 
 Contributions are welcome! Feel free to fork this repository and submit pull requests.
 
 
 ---
 
-##Contact 📬
+## Contact 📬
 
 For any questions or suggestions, feel free to reach out:
 
@@ -95,6 +95,6 @@ GitHub: akashkr-971
 
 ---
 
-##Happy reading! 🎉
+## Happy reading! 🎉
 
 You can save this content as a README.md file in the root directory of your project. Let me know if you need further assistance!
