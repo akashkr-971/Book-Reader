@@ -32,7 +32,7 @@ dependencies:
 ```
 ---
 
-Installation 🚀
+**Installation 🚀**
 
 1. Clone the Repository:
 ```
@@ -54,7 +54,7 @@ flutter run
 
 ---
 
-Usage 📱
+**Usage 📱**
 
 1. Launch the app on your mobile device.
 
@@ -69,7 +69,7 @@ Usage 📱
 
 ---
 
-Future Enhancements 🌟
+**Future Enhancements 🌟**
 
 Dark mode support.
 
@@ -82,20 +82,20 @@ Cloud backup for user data.
 
 ---
 
-Contributing 🤝
+**Contributing 🤝**
 
 Contributions are welcome! Feel free to fork this repository and submit pull requests.
 
 
 ---
 
-License 📝
+**License 📝**
 
 This project is licensed under the MIT License.
 
 ---
 
-Contact 📬
+**Contact 📬**
 
 For any questions or suggestions, feel free to reach out:
 
@@ -107,6 +107,6 @@ GitHub: akashkr-971
 
 ---
 
-Happy reading! 🎉
+**Happy reading! 🎉**
 
 You can save this content as a README.md file in the root directory of your project. Let me know if you need further assistance!
