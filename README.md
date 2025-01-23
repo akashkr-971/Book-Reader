@@ -2,7 +2,6 @@
  
 A Flutter-based mobile application designed to enhance your reading experience by allowing you to upload a PDF, select it, and listen to its content using text-to-speech (TTS) functionality. The app also includes local data storage for user preferences and reading progress.
 
----
 
 ## Features ✨
 
@@ -11,8 +10,6 @@ A Flutter-based mobile application designed to enhance your reading experience b
 - 💾 *Local Data Storage*: Store your data locally using SQLite for offline access.
 - 🔄 *Continue Where You Left Off*: Save and load reading progress.
 - 🛠 *User-Friendly Interface*: Minimalistic design for a seamless reading experience.
-
----
 
 ## Dependencies 🧩
 
@@ -30,28 +27,28 @@ dependencies:
   sqflite: ^2.4.1
   cupertino_icons: ^1.0.8
   path: ^1.9.0
-  shared_preferences: ^2.0.15 ```
+  shared_preferences: ^2.0.15
 
-
+```
 ---
 
 Installation 🚀
 
 1. Clone the Repository:
-
+```
 git clone https://github.com/your-username/book_reader_app.git
 cd book_reader_app
-
+```
 
 2. Install Dependencies:
-
+```
 flutter pub get
-
+```
 
 3. Run the App:
-
+```
 flutter run
-
+```
 
 
 
@@ -70,16 +67,6 @@ Usage 📱
 
 4. Your progress is automatically saved locally for future sessions.
 
-
-
-
----
-
-Screenshots 🖼
-
-Add screenshots of your app here to showcase its design and functionality.
-
-
 ---
 
 Future Enhancements 🌟
@@ -91,7 +78,6 @@ Multi-language TTS functionality.
 Bookmarking specific pages or sections.
 
 Cloud backup for user data.
-
 
 
 ---
@@ -107,16 +93,15 @@ License 📝
 
 This project is licensed under the MIT License.
 
-
 ---
 
 Contact 📬
 
 For any questions or suggestions, feel free to reach out:
 
-Email: your-email@example.com
+Email: akashkr971@gmail.com
 
-GitHub: your-username
+GitHub: akashkr-971
 
 
 
