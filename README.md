@@ -35,7 +35,7 @@ dependencies:
 
 1. Clone the Repository:
 ```
-git clone https://github.com/akashkr-971/book_reader.git
+git clone https://github.com/akashkr-971/Book-Reader
 cd book_reader_app
 ```
 
