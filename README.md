@@ -30,13 +30,12 @@ dependencies:
   shared_preferences: ^2.0.15
 
 ```
----
 
-**Installation 🚀**
+## Installation 🚀
 
 1. Clone the Repository:
 ```
-git clone https://github.com/your-username/book_reader_app.git
+git clone https://github.com/akashkr-971/book_reader.git
 cd book_reader_app
 ```
 
@@ -51,10 +50,7 @@ flutter run
 ```
 
 
-
----
-
-**Usage 📱**
+## Usage 📱 
 
 1. Launch the app on your mobile device.
 
@@ -69,7 +65,7 @@ flutter run
 
 ---
 
-**Future Enhancements 🌟**
+##Future Enhancements 🌟
 
 Dark mode support.
 
@@ -82,20 +78,14 @@ Cloud backup for user data.
 
 ---
 
-**Contributing 🤝**
+##Contributing 🤝
 
 Contributions are welcome! Feel free to fork this repository and submit pull requests.
 
 
 ---
 
-**License 📝**
-
-This project is licensed under the MIT License.
-
----
-
-**Contact 📬**
+##Contact 📬
 
 For any questions or suggestions, feel free to reach out:
 
@@ -103,10 +93,8 @@ Email: akashkr971@gmail.com
 
 GitHub: akashkr-971
 
-
-
 ---
 
-**Happy reading! 🎉**
+##Happy reading! 🎉
 
 You can save this content as a README.md file in the root directory of your project. Let me know if you need further assistance!
