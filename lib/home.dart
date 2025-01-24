@@ -4,10 +4,12 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:sqflite/sqflite.dart';
 import 'bookdisplay.dart';
 import 'package:path/path.dart' as p;
 import 'db_helper.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:path_provider/path_provider.dart';
 
 List<List<String>> books = [];
 List<List<String>> allbooks = [];
@@ -61,12 +63,14 @@ class _HomeState extends State<Home> {
   }
 
   void _toggleSearch() {
-    allbooks = books;
     setState(() {
       _isSearching = !_isSearching;
       if (!_isSearching) {
         _searchController.clear();
+        print('Search Off');
         books = allbooks;
+      } else {
+        print("Search on");
       }
     });
     _reload();
@@ -90,17 +94,27 @@ class _HomeState extends State<Home> {
 
   Future<void> _upload() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles();
-
     if (result != null) {
       File file = File(result.files.single.path!);
+
+      final appdocdir = await getApplicationDocumentsDirectory();
+      final booksDir = Directory(p.join(appdocdir.path, 'Books'));
+      if (!await booksDir.exists()) {
+        await booksDir.create(recursive: true);
+        print('Books directory created: ${booksDir.path}');
+      }
+      final newFilePath = p.join(booksDir.path, p.basename(file.path));
+      final savedFile = await file.copy(newFilePath);
+      print('Book saved to: ${savedFile.path}');
+
       String fileName = p.basenameWithoutExtension(result.files.single.name);
       bool fileExists = books.any((book) => book[0] == fileName);
-      bool filepathExists = books.any((book) => book[0] == file.path);
+      bool filepathExists = books.any((book) => book[0] == savedFile.path);
       if (!fileExists && !filepathExists) {
         setState(() {
-          books.add([fileName, file.path]);
-          allbooks.add([fileName, file.path]);
-          _addBook(fileName, file.path);
+          books.add([fileName, savedFile.path]);
+          allbooks.add([fileName, savedFile.path]);
+          _addBook(fileName, savedFile.path);
         });
       } else {
         if (mounted) {
@@ -167,8 +181,10 @@ class _HomeState extends State<Home> {
         ],
       ),
       body: _pages[_currentIndex],
-      floatingActionButton: FloatingActionButton(
-          onPressed: _upload, tooltip: 'Upload', child: Icon(Icons.upload)),
+      floatingActionButton: _currentIndex != 0
+          ? null
+          : FloatingActionButton(
+              onPressed: _upload, tooltip: 'Upload', child: Icon(Icons.upload)),
       bottomNavigationBar: BottomNavigationBar(
           currentIndex: _currentIndex,
           onTap: onTabTapped,
@@ -241,7 +257,18 @@ class _HomescreenState extends State<Homescreen> {
                                 TextButton(
                                   onPressed: () async {
                                     String bookname = books[index][0];
+                                    String filepath = books[index][1];
                                     await DBHelper.deleteBook(bookname);
+
+                                    final file = File(filepath);
+                                    if (await file.exists()) {
+                                      await file.delete();
+                                      print(
+                                          'Deleted file from storage: $filepath');
+                                    } else {
+                                      print('File does not exist: $filepath');
+                                    }
+
                                     setState(() {
                                       books.removeAt(index);
                                       allbooks.removeWhere(

@@ -38,7 +38,6 @@ class _BookDisplayState extends State<BookDisplay> {
     _pageController.text = (_currentPage + 1).toString();
     _initializePdf();
     _initializeTts();
-    _loadOpenedBook();
   }
 
   Future<void> _initializeTts() async {
@@ -87,8 +86,6 @@ class _BookDisplayState extends State<BookDisplay> {
       _pdfDocument = PdfDocument(inputBytes: bytes);
 
       print('PDF loaded successfully with ${_pdfDocument.pages.count} pages');
-      await _loadPageText(_currentPage);
-
       setState(() {
         _isLoading = false;
       });
@@ -105,10 +102,8 @@ class _BookDisplayState extends State<BookDisplay> {
     List openedbook = await DBHelper.searchBook(widget.book[0]);
     _currentPage = (openedbook[0]['currentPage']) as int;
     print('The page where we stopped is : $_currentPage');
-    Future.delayed(Duration(seconds: 1), () async {
-      _pdfViewController?.setPage(_currentPage);
-      await _loadPageText(_currentPage);
-    });
+    _pdfViewController?.setPage(_currentPage);
+    await _loadPageText(_currentPage);
   }
 
   Future<void> _loadPageText(int pageNumber) async {
@@ -123,7 +118,7 @@ class _BookDisplayState extends State<BookDisplay> {
       );
       setState(() {
         _currentPageText =
-            text.isNotEmpty ? text : 'No text found on this page.';
+            text.isNotEmpty ? text.trim() : 'No text found on this page.';
       });
       List bookid = await DBHelper.searchBook(widget.book[0]);
       await DBHelper.updateBookPage(bookid[0]['id'], pageNumber);
@@ -305,7 +300,9 @@ class _BookDisplayState extends State<BookDisplay> {
       print(books);
       await _pdfViewController?.setPage(_currentPage);
       await _loadPageText(_currentPage);
-      _startTTS();
+      if (isPlaying) {
+        await _startTTS();
+      }
     }
   }
 
@@ -355,6 +352,15 @@ class _BookDisplayState extends State<BookDisplay> {
                             });
                           }
                         }
+                      },
+                      onRender: (pages) {
+                        setState(() {
+                          _totalPages = pages!;
+                          print("The total page after ender is : $_totalPages");
+                        });
+                        print(
+                            "The Current page after ender is : $_currentPage");
+                        _loadOpenedBook();
                       },
                       onError: (error) {
                         print('PDFView error: $error');
