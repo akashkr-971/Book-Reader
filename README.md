@@ -49,7 +49,12 @@ cd book_reader_app
 flutter pub get
 ```
 
-3. Run the App:
+3. Launch the emulator
+```
+flutter emulators --launch <<emulator_name>>
+```
+
+4. Run the App:
 ```
 flutter run
 ```
